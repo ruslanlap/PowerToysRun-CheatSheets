@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="assets/logo.png" alt="CheatSheets Icon" width="128" height="128">
-  <h3>📚 Find cheat sheets and command examples instantly always over hand 📚</h3>
+  <h3>📚 Find cheat sheets and command examples instantly always at your fingertips with PowerToys Run plugin </h3>
   
   <!-- Badges -->
   <a href="https://github.com/ruslanlap/PowerToysRun-CheatSheets/actions/workflows/build-and-release.yml">
@@ -54,6 +54,10 @@
   <img src="https://img.shields.io/github/downloads/ruslanlap/PowerToysRun-CheatSheets/total?style=for-the-badge&label=Total%20Downloads" height="42" alt="Total Downloads">
   <img src="https://img.shields.io/github/downloads/ruslanlap/PowerToysRun-CheatSheets/latest/total?style=for-the-badge&label=Latest%20Release" height="42"  alt="Latest Release Downloads">
 </div>
+  <div align="center">
+    <img src="assets/demo3.png" alt="Demo: Settings" width="800">
+    <p><em>CheatSheets Plugin Settings Demo</em></p>
+  </div>
 
 ## 📝 Overview
 

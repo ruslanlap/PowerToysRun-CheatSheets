@@ -228,7 +228,7 @@ jobs:
           cat > release_notes.md << EOL
           # CheatSheets Plugin v${VERSION}
 
-          ![CheatSheets Plugin Logo](https://raw.githubusercontent.com/ruslanlap/PowerToysRun-CheatSheets/master/icon.png)
+          <img src="https://raw.githubusercontent.com/ruslanlap/PowerToysRun-CheatSheets/master/assets/logo.png" alt="CheatSheets Plugin Logo" width="64"/>
 
           ## What's New in v${VERSION}
 

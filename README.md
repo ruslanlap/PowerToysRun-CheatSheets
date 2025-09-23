@@ -78,11 +78,8 @@
 
 ## 🎬 Demo
 <div align="center">
-  <video controls width="800">
-    <source src="assets/demo-cheatsheets.gif" type="image/gif">
-    Your browser does not support the video tag.
-  </video>
-  <p><em>CheatSheets Plugin Demo Video</em></p>
+  <img src="assets/demo-cheatsheets.gif" alt="CheatSheets Plugin Demo" width="800">
+  <p><em>CheatSheets Plugin Demo GIF</em></p>
 </div>
 
 ## ⚡ Installation

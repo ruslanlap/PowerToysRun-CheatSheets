@@ -1,0 +1,34 @@
+run = "dotnet run"
+modules = ["dotnet", "dotnet-9.0"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "dotnet run"]
+
+[agent]
+expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "DotNet Console App"
+
+[[workflows.workflow]]
+name = "DotNet Console App"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd HelloDotNet9 && dotnet run"
+
+[workflows.workflow.metadata]
+outputType = "console"

@@ -1,0 +1,273 @@
+name: Build and Release CheatSheets Plugin
+
+on:
+  push:
+    # branches:
+    #   - master
+    tags:
+      - 'v*'
+
+# Permissions for GITHUB_TOKEN (principle of least privilege)
+permissions:
+  contents: write  # Needed for creating releases
+  issues: read
+  pull-requests: read
+
+# Add restrictions for parallel runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [x64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build
+        run: dotnet build CheatSheets/CheatSheets.sln -c Release -p:Platform="${{ matrix.platform }}"
+
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: |
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            echo "IS_TAG=true" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=$(date +'%Y.%m.%d')-$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+            echo "IS_TAG=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Debug Output
+        run: |
+          Get-ChildItem -Path "CheatSheets" -Recurse -Directory | Where-Object { $_.Name -eq "Release" } | ForEach-Object { Write-Host $_.FullName }
+        shell: pwsh
+
+      - name: Create output directory
+        run: mkdir -p artifacts
+
+      - name: Copy build output to artifacts directory
+        run: |
+          $artifactDir = "artifacts/CheatSheets-v${{ steps.get_version.outputs.VERSION }}-${{ matrix.platform }}"
+
+          # Create the artifact directory
+          New-Item -ItemType Directory -Force -Path $artifactDir
+
+          # Create CheatSheets subfolder
+          New-Item -ItemType Directory -Force -Path "$artifactDir/CheatSheets"
+
+          # Copy Images folder (icons) to artifact directory to ensure correct icons in release
+          $imagesSrc = "CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/Images"
+          $imagesDst = "$artifactDir/CheatSheets/Images"
+          if (Test-Path $imagesSrc) {
+            Write-Host "Copying Images folder from $imagesSrc to $imagesDst"
+            Copy-Item -Path $imagesSrc -Destination $imagesDst -Recurse -Force
+          } else {
+            Write-Host "Images folder not found at $imagesSrc"
+          }
+
+          # Define the direct path to the build output
+          $buildOutput = "CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/${{ matrix.platform }}/Release"
+
+          Write-Host "Using build output directory: $buildOutput"
+
+          # Check if the directory exists
+          if (-not (Test-Path $buildOutput)) {
+            Write-Host "Build output directory not found at expected path. Searching for it..."
+            $buildOutput = Get-ChildItem -Path "CheatSheets" -Recurse -Directory |
+                           Where-Object { $_.Name -eq "Release" -and $_.FullName -like "*${{ matrix.platform }}*" } |
+                           Select-Object -First 1 -ExpandProperty FullName
+
+            if ($buildOutput) {
+              Write-Host "Found build output directory: $buildOutput"
+            } else {
+              Write-Error "Could not find any Release directory for platform ${{ matrix.platform }}"
+              exit 1
+            }
+          }
+
+          # Check if build output exists before proceeding
+          if (-not (Test-Path $buildOutput)) {
+            Write-Error "Build output directory not found"
+            exit 1
+          }
+
+          # Check for files directly in the build output directory
+          $files = Get-ChildItem -Path $buildOutput -File
+          if ($files.Count -gt 0) {
+            Write-Host "Found $($files.Count) files in build output directory. Copying directly..."
+            Copy-Item -Path "$buildOutput/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
+            Write-Host "Files copied successfully"
+          } else {
+            # Look for a .NET runtime folder
+            $runtimeFolder = Get-ChildItem -Path $buildOutput -Directory |
+                             Where-Object { $_.Name -like "net*-windows*" } |
+                             Select-Object -First 1 -ExpandProperty FullName
+
+            if ($runtimeFolder) {
+              Write-Host "Found runtime folder: $runtimeFolder"
+              Copy-Item -Path "$runtimeFolder/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
+              Write-Host "Files copied successfully from runtime folder"
+            } else {
+              # If no runtime folder, check for any subdirectories
+              $subDirs = Get-ChildItem -Path $buildOutput -Directory
+              if ($subDirs.Count -gt 0) {
+                $firstSubDir = $subDirs[0].FullName
+                Write-Host "No runtime folder found, but found subdirectory: $firstSubDir"
+                Copy-Item -Path "$firstSubDir/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
+                Write-Host "Files copied from first subdirectory"
+              } else {
+                Write-Error "No files or subdirectories found in build output directory"
+                exit 1
+              }
+            }
+          }
+
+          # Remove unnecessary PowerToys DLLs that are provided by the host
+          $unnecessaryDlls = @(
+            "PowerToys.Common.UI.dll",
+            "PowerToys.ManagedCommon.dll",
+            "PowerToys.Settings.UI.Lib.dll",
+            "Wox.Infrastructure.dll",
+            "Wox.Plugin.dll"
+          )
+
+          foreach ($dll in $unnecessaryDlls) {
+            $dllPath = "$artifactDir/CheatSheets/$dll"
+            if (Test-Path $dllPath) {
+              Write-Host "Removing unnecessary DLL: $dll"
+              Remove-Item $dllPath -Force
+            }
+          }
+        shell: pwsh
+
+      - name: Create ZIP archive
+        run: |
+          $artifactDir = "artifacts/CheatSheets-v${{ steps.get_version.outputs.VERSION }}-${{ matrix.platform }}"
+          $zipName = "CheatSheets-${{ steps.get_version.outputs.VERSION }}-${{ matrix.platform }}.zip"
+          # Create ZIP with CheatSheets folder inside
+          Compress-Archive -Path "$artifactDir/CheatSheets" -DestinationPath "artifacts/$zipName"
+        shell: pwsh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.platform }}
+          path: artifacts/*.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      # Debug step to see what files are available
+      - name: List downloaded artifacts
+        run: |
+          echo "Listing downloaded artifacts directory:"
+          ls -la downloaded-artifacts
+          echo "Listing x64 artifacts:"
+          ls -la downloaded-artifacts/build-artifacts-x64 || echo "No x64 artifacts found"
+          echo "Listing ARM64 artifacts:"
+          ls -la downloaded-artifacts/build-artifacts-arm64 || echo "No ARM64 artifacts found"
+
+      # Copy artifacts to the expected location with the correct names
+      - name: Prepare artifacts for release
+        run: |
+          mkdir -p release-artifacts
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          cp downloaded-artifacts/build-artifacts-x64/CheatSheets-${VERSION}-x64.zip release-artifacts/ || echo "Failed to copy x64 artifact"
+          cp downloaded-artifacts/build-artifacts-arm64/CheatSheets-${VERSION}-arm64.zip release-artifacts/CheatSheets-${VERSION}-ARM64.zip || echo "Failed to copy ARM64 artifact"
+          echo "Listing release artifacts:"
+          ls -la release-artifacts
+
+      - name: Prepare Release Notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          cat > release_notes.md << EOL
+          # CheatSheets Plugin v${VERSION}
+
+          ![CheatSheets Plugin Logo](https://raw.githubusercontent.com/ruslanlap/PowerToysRun-CheatSheets/master/icon.png)
+
+          ## What's New in v${VERSION}
+
+          ### ✨ New Features:
+          - **Fuzzy Search** - Improved search with fuzzy matching for better results
+          - **Favorites System** - Save and organize your most-used commands
+          - **Categories** - Browse commands by tool and programming language
+          - **Smart Caching** - Background caching with configurable duration
+          - **Offline Mode** - Full functionality without internet connection
+
+          ### 🔧 Technical Improvements:
+          - Enhanced performance with optimized search algorithms
+          - Improved caching system for faster offline access
+          - Better error handling and user feedback
+          - Theme-aware UI with automatic light/dark mode support
+          - Robust offline mode with comprehensive cheat sheet coverage
+
+          ## Installation
+
+          1. Download the ZIP file for your platform (x64 or ARM64)
+          2. Extract to \`%LOCALAPPDATA%\\Microsoft\\PowerToys\\PowerToys Run\\Plugins\\\`
+          3. Restart PowerToys
+          4. Use \`cs\` keyword to search for cheat sheets and commands
+
+          Made with ❤️ by [ruslanlap](https://github.com/ruslanlap)
+          EOL
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd release-artifacts
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          sha256sum CheatSheets-${VERSION}-x64.zip | tr 'a-f' 'A-F' > CheatSheets-${VERSION}-x64.zip.sha256
+          sha256sum CheatSheets-${VERSION}-ARM64.zip | tr 'a-f' 'A-F' > CheatSheets-${VERSION}-ARM64.zip.sha256
+
+          # Create combined checksums.txt file
+          echo "SHA256 Checksums for CheatSheets Plugin v${VERSION}" > checksums.txt
+          echo "Generated on: $(date -u)" >> checksums.txt
+          echo "" >> checksums.txt
+          cat CheatSheets-${VERSION}-x64.zip.sha256 >> checksums.txt
+          cat CheatSheets-${VERSION}-ARM64.zip.sha256 >> checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: PowerToysRun-CheatSheets v${{ steps.get_version.outputs.VERSION }}
+          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+          draft: false
+          prerelease: false
+          files: |
+            release-artifacts/CheatSheets-${{ steps.get_version.outputs.VERSION }}-x64.zip
+            release-artifacts/CheatSheets-${{ steps.get_version.outputs.VERSION }}-ARM64.zip
+            release-artifacts/CheatSheets-${{ steps.get_version.outputs.VERSION }}-x64.zip.sha256
+            release-artifacts/CheatSheets-${{ steps.get_version.outputs.VERSION }}-ARM64.zip.sha256
+            release-artifacts/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -214,8 +214,8 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## 📸 Screenshots
 <div align="center">
-  <img src="assets/demo1.png" width="600" alt="Demo: CheatSheets Plugin Interface">
-  <img src="assets/demo2.png" width="600" alt="Demo: Search Results">
+  <img src="assets/demo1.png" width="800" height="400" alt="Demo: CheatSheets Plugin Interface">
+  <img src="assets/demo2.png" width="800" height="400" alt="Demo: Search Results">
 </div>
 
 ## ☕ Support

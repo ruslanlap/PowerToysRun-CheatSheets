@@ -150,6 +150,23 @@ jobs:
               Remove-Item $dllPath -Force
             }
           }
+
+          # Remove unnecessary PowerToys PDB files that are provided by the host
+          $unnecessaryPdbs = @(
+            "PowerToys.Common.UI.pdb",
+            "PowerToys.ManagedCommon.pdb",
+            "PowerToys.Settings.UI.Lib.pdb",
+            "Wox.Infrastructure.pdb",
+            "Wox.Plugin.pdb"
+          )
+
+          foreach ($pdb in $unnecessaryPdbs) {
+            $pdbPath = "$artifactDir/CheatSheets/$pdb"
+            if (Test-Path $pdbPath) {
+              Write-Host "Removing unnecessary PDB: $pdb"
+              Remove-Item $pdbPath -Force
+            }
+          }
         shell: pwsh
 
       - name: Create ZIP archive

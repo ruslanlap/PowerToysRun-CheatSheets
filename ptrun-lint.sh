@@ -38,7 +38,7 @@ export DOTNET_ROOT="$HOME/.dotnet"
 export PATH="$PATH:$HOME/.dotnet/tools"
 
 # Запуск ptrun-lint
-echo "Запуск ptrun-lint для PowerToysRun-Hotkeys..."
-ptrun-lint https://github.com/ruslanlap/PowerToysRun-Hotkeys
+echo "Запуск ptrun-lint для PowerToysRun-CheatSheets..."
+ptrun-lint --GitHubRepo https://github.com/ruslanlap/PowerToysRun-CheatSheets --Path "$(pwd)"
 
 echo "Готово!"

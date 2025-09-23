@@ -78,8 +78,11 @@
 
 ## 🎬 Demo
 <div align="center">
-  <img src="terminal.png" alt="CheatSheets Plugin Demo" width="800">
-  <img src="vs.png" alt="Visual Studio Integration" width="800">
+  <video controls width="800">
+    <source src="assets/demo-cheatsheets.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <p><em>CheatSheets Plugin Demo Video</em></p>
 </div>
 
 ## ⚡ Installation

@@ -138,14 +138,22 @@
 
 ## 📊 Project Structure
 ```
-CheatSheets/
-├── Community.PowerToys.Run.Plugin.CheatSheets/    # Plugin source code
-├── data/                                       # Demo assets and icons
-├── tests/                                      # Unit & integration tests
-├── Publish/                                    # Build output
-├── CHANGELOG.md                                # Version history
-├── CONTRIBUTE.md                               # Contributing guidelines
-├── RELEASE.md                                  # Release notes
+PowerToysRun-CheatSheets/
+├── .github/                                    # GitHub Actions workflows
+├── assets/                                     # Demo assets, screenshots, and logo
+│   ├── logo.png                               # Plugin logo
+│   ├── demo1.png                              # Screenshot 1
+│   ├── demo2.png                              # Screenshot 2
+│   └── demo-cheatsheets.mp4                   # Video demo
+├── CheatSheets/                               # Plugin source code
+│   ├── Community.PowerToys.Run.Plugin.CheatSheets/  # Main plugin
+│   └── Community.PowerToys.Run.Plugin.CheatSheets.UnitTests/  # Unit tests
+├── Templates.sln                              # Solution file for templates
+├── build-and-zip.sh                           # Build script
+├── ptrun-lint.sh                              # Linting script
+├── CLAUDE.md                                  # Development guide
+├── LICENSE                                    # MIT License
+└── README.md                                  # This file
 ```
 
 ## ❓ FAQ
@@ -206,9 +214,8 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## 📸 Screenshots
 <div align="center">
-  <img src="vs.png" width="350" alt="Demo: Visual Studio Integration">
-  <img src="terminal.png" width="350" alt="Demo: Terminal Commands">
-  <img src="vs-new-project.png" width="350" alt="Demo: New Project Setup">
+  <img src="assets/demo1.png" width="350" alt="Demo: CheatSheets Plugin Interface">
+  <img src="assets/demo2.png" width="350" alt="Demo: Search Results">
 </div>
 
 ## ☕ Support

@@ -57,7 +57,7 @@
 
 ## 📝 Overview
 
-**CheatSheets** is a PowerToys Run plugin that lets you instantly find cheat sheets and command examples for various tools and programming languages. Search through tldr pages, cheat.sh, and offline documentation—no browser required!
+**CheatSheets** is a PowerToys Run plugin that lets you instantly find cheat sheets and command examples for various tools and programming languages. Search through [tldr pages](https://tldr.sh/), [cheat.sh](https://cheat.sh/), and [devhints.io](https://devhints.io/), offline documentation—no browser required!
 
 - **Plugin ID:** `41BF0604C51A4974A0BAA108826D0A94`
 - **Action Keyword:** `cs` or change to `cheatsheet`
@@ -79,7 +79,7 @@
 ## 🎬 Demo
 <div align="center">
   <video controls width="800">
-    <source src="assets/demo-cheatsheets.mp4" type="video/mp4">
+    <source src="assets/demo-cheatsheets.gif" type="image/gif">
     Your browser does not support the video tag.
   </video>
   <p><em>CheatSheets Plugin Demo Video</em></p>
@@ -217,8 +217,8 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## 📸 Screenshots
 <div align="center">
-  <img src="assets/demo1.png" width="350" alt="Demo: CheatSheets Plugin Interface">
-  <img src="assets/demo2.png" width="350" alt="Demo: Search Results">
+  <img src="assets/demo1.png" width="600" alt="Demo: CheatSheets Plugin Interface">
+  <img src="assets/demo2.png" width="600" alt="Demo: Search Results">
 </div>
 
 ## ☕ Support

@@ -24,18 +24,35 @@ jobs:
     strategy:
       matrix:
         platform: [x64, arm64]
+      fail-fast: false # Continue with other platforms if one fails
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Shallow clone for faster checkout
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
+          
+      # Add caching for NuGet packages
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
+      # Restore dependencies separately for better caching
+      - name: Restore dependencies
+        run: dotnet restore CheatSheets/CheatSheets.sln -p:Platform="${{ matrix.platform }}"
+
+      # Build with optimized settings
       - name: Build
-        run: dotnet build CheatSheets/CheatSheets.sln -c Release -p:Platform="${{ matrix.platform }}"
+        run: dotnet build CheatSheets/CheatSheets.sln -c Release -p:Platform="${{ matrix.platform }}" --no-restore
 
       - name: Get version
         id: get_version
@@ -59,112 +76,75 @@ jobs:
 
       - name: Copy build output to artifacts directory
         run: |
+          # Define paths upfront for better performance
           $artifactDir = "artifacts/CheatSheets-v${{ steps.get_version.outputs.VERSION }}-${{ matrix.platform }}"
-
-          # Create the artifact directory
-          New-Item -ItemType Directory -Force -Path $artifactDir
-
-          # Create CheatSheets subfolder
-          New-Item -ItemType Directory -Force -Path "$artifactDir/CheatSheets"
-
-          # Copy Images folder (icons) to artifact directory to ensure correct icons in release
-          $imagesSrc = "CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/Images"
-          $imagesDst = "$artifactDir/CheatSheets/Images"
-          if (Test-Path $imagesSrc) {
-            Write-Host "Copying Images folder from $imagesSrc to $imagesDst"
-            Copy-Item -Path $imagesSrc -Destination $imagesDst -Recurse -Force
-          } else {
-            Write-Host "Images folder not found at $imagesSrc"
-          }
-
-          # Define the direct path to the build output
           $buildOutput = "CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/${{ matrix.platform }}/Release"
-
-          Write-Host "Using build output directory: $buildOutput"
-
-          # Check if the directory exists
-          if (-not (Test-Path $buildOutput)) {
-            Write-Host "Build output directory not found at expected path. Searching for it..."
-            $buildOutput = Get-ChildItem -Path "CheatSheets" -Recurse -Directory |
-                           Where-Object { $_.Name -eq "Release" -and $_.FullName -like "*${{ matrix.platform }}*" } |
-                           Select-Object -First 1 -ExpandProperty FullName
-
-            if ($buildOutput) {
-              Write-Host "Found build output directory: $buildOutput"
+          $runtimeFolder = "$buildOutput/net9.0-windows10.0.22621.0"
+          
+          # Create directories in a single operation
+          New-Item -ItemType Directory -Force -Path "$artifactDir/CheatSheets"
+          
+          # Fast path: Try direct copy from the expected runtime folder
+          if (Test-Path $runtimeFolder) {
+            Write-Host "Using fast path: Copying from known runtime folder"
+            Copy-Item -Path "$runtimeFolder/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
+          } else {
+            # Fallback: Use optimized search logic
+            Write-Host "Fast path not available, using fallback path"
+            if (Test-Path $buildOutput) {
+              # Check for files directly in the build output directory
+              $files = Get-ChildItem -Path $buildOutput -File
+              if ($files.Count -gt 0) {
+                Copy-Item -Path "$buildOutput/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
+              } else {
+                # Look for a .NET runtime folder
+                $runtimeFolder = Get-ChildItem -Path $buildOutput -Directory | 
+                                 Where-Object { $_.Name -like "net*-windows*" } | 
+                                 Select-Object -First 1 -ExpandProperty FullName
+                
+                if ($runtimeFolder) {
+                  Copy-Item -Path "$runtimeFolder/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
+                } else {
+                  # Last resort: check for any subdirectories
+                  $subDir = Get-ChildItem -Path $buildOutput -Directory | Select-Object -First 1 -ExpandProperty FullName
+                  if ($subDir) {
+                    Copy-Item -Path "$subDir/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
+                  } else {
+                    Write-Error "No files or subdirectories found in build output directory"
+                    exit 1
+                  }
+                }
+              }
             } else {
-              Write-Error "Could not find any Release directory for platform ${{ matrix.platform }}"
+              Write-Error "Build output directory not found at $buildOutput"
               exit 1
             }
           }
 
-          # Check if build output exists before proceeding
-          if (-not (Test-Path $buildOutput)) {
-            Write-Error "Build output directory not found"
-            exit 1
+          # Copy Images folder directly to the destination
+          $imagesSrc = "CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/Images"
+          if (Test-Path $imagesSrc) {
+            Copy-Item -Path $imagesSrc -Destination "$artifactDir/CheatSheets/Images" -Recurse -Force
           }
 
-          # Check for files directly in the build output directory
-          $files = Get-ChildItem -Path $buildOutput -File
-          if ($files.Count -gt 0) {
-            Write-Host "Found $($files.Count) files in build output directory. Copying directly..."
-            Copy-Item -Path "$buildOutput/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
-            Write-Host "Files copied successfully"
-          } else {
-            # Look for a .NET runtime folder
-            $runtimeFolder = Get-ChildItem -Path $buildOutput -Directory |
-                             Where-Object { $_.Name -like "net*-windows*" } |
-                             Select-Object -First 1 -ExpandProperty FullName
-
-            if ($runtimeFolder) {
-              Write-Host "Found runtime folder: $runtimeFolder"
-              Copy-Item -Path "$runtimeFolder/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
-              Write-Host "Files copied successfully from runtime folder"
-            } else {
-              # If no runtime folder, check for any subdirectories
-              $subDirs = Get-ChildItem -Path $buildOutput -Directory
-              if ($subDirs.Count -gt 0) {
-                $firstSubDir = $subDirs[0].FullName
-                Write-Host "No runtime folder found, but found subdirectory: $firstSubDir"
-                Copy-Item -Path "$firstSubDir/*" -Destination "$artifactDir/CheatSheets" -Recurse -Force
-                Write-Host "Files copied from first subdirectory"
-              } else {
-                Write-Error "No files or subdirectories found in build output directory"
-                exit 1
-              }
-            }
-          }
-
-          # Remove unnecessary PowerToys DLLs that are provided by the host
-          $unnecessaryDlls = @(
+          # Remove unnecessary files in a single operation
+          $unnecessaryFiles = @(
             "PowerToys.Common.UI.dll",
             "PowerToys.ManagedCommon.dll",
             "PowerToys.Settings.UI.Lib.dll",
             "Wox.Infrastructure.dll",
-            "Wox.Plugin.dll"
-          )
-
-          foreach ($dll in $unnecessaryDlls) {
-            $dllPath = "$artifactDir/CheatSheets/$dll"
-            if (Test-Path $dllPath) {
-              Write-Host "Removing unnecessary DLL: $dll"
-              Remove-Item $dllPath -Force
-            }
-          }
-
-          # Remove unnecessary PowerToys PDB files that are provided by the host
-          $unnecessaryPdbs = @(
+            "Wox.Plugin.dll",
             "PowerToys.Common.UI.pdb",
             "PowerToys.ManagedCommon.pdb",
             "PowerToys.Settings.UI.Lib.pdb",
             "Wox.Infrastructure.pdb",
             "Wox.Plugin.pdb"
           )
-
-          foreach ($pdb in $unnecessaryPdbs) {
-            $pdbPath = "$artifactDir/CheatSheets/$pdb"
-            if (Test-Path $pdbPath) {
-              Write-Host "Removing unnecessary PDB: $pdb"
-              Remove-Item $pdbPath -Force
+          
+          foreach ($file in $unnecessaryFiles) {
+            $filePath = "$artifactDir/CheatSheets/$file"
+            if (Test-Path $filePath) {
+              Remove-Item $filePath -Force
             }
           }
         shell: pwsh
@@ -191,6 +171,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Shallow clone for faster checkout
 
       - name: Get version from tag
         id: get_version
@@ -200,26 +182,27 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded-artifacts
+          merge-multiple: true # Merge artifacts with the same name
 
-      # Debug step to see what files are available
-      - name: List downloaded artifacts
-        run: |
-          echo "Listing downloaded artifacts directory:"
-          ls -la downloaded-artifacts
-          echo "Listing x64 artifacts:"
-          ls -la downloaded-artifacts/build-artifacts-x64 || echo "No x64 artifacts found"
-          echo "Listing ARM64 artifacts:"
-          ls -la downloaded-artifacts/build-artifacts-arm64 || echo "No ARM64 artifacts found"
-
-      # Copy artifacts to the expected location with the correct names
       - name: Prepare artifacts for release
         run: |
           mkdir -p release-artifacts
           VERSION="${{ steps.get_version.outputs.VERSION }}"
-          cp downloaded-artifacts/build-artifacts-x64/CheatSheets-${VERSION}-x64.zip release-artifacts/ || echo "Failed to copy x64 artifact"
-          cp downloaded-artifacts/build-artifacts-arm64/CheatSheets-${VERSION}-arm64.zip release-artifacts/CheatSheets-${VERSION}-ARM64.zip || echo "Failed to copy ARM64 artifact"
-          echo "Listing release artifacts:"
-          ls -la release-artifacts
+          
+          # Fast copy with error handling
+          find downloaded-artifacts -name "CheatSheets-${VERSION}-x64.zip" -exec cp {} release-artifacts/ \;
+          find downloaded-artifacts -name "CheatSheets-${VERSION}-arm64.zip" -exec cp {} release-artifacts/CheatSheets-${VERSION}-ARM64.zip \;
+          
+          # Verify artifacts were copied
+          if [ ! -f "release-artifacts/CheatSheets-${VERSION}-x64.zip" ]; then
+            echo "Error: x64 artifact not found"
+            exit 1
+          fi
+          
+          if [ ! -f "release-artifacts/CheatSheets-${VERSION}-ARM64.zip" ]; then
+            echo "Error: ARM64 artifact not found"
+            exit 1
+          fi
 
       - name: Prepare Release Notes
         id: release_notes
@@ -263,15 +246,22 @@ jobs:
         run: |
           cd release-artifacts
           VERSION="${{ steps.get_version.outputs.VERSION }}"
-          sha256sum CheatSheets-${VERSION}-x64.zip | tr 'a-f' 'A-F' > CheatSheets-${VERSION}-x64.zip.sha256
-          sha256sum CheatSheets-${VERSION}-ARM64.zip | tr 'a-f' 'A-F' > CheatSheets-${VERSION}-ARM64.zip.sha256
-
-          # Create combined checksums.txt file
-          echo "SHA256 Checksums for CheatSheets Plugin v${VERSION}" > checksums.txt
-          echo "Generated on: $(date -u)" >> checksums.txt
-          echo "" >> checksums.txt
-          cat CheatSheets-${VERSION}-x64.zip.sha256 >> checksums.txt
-          cat CheatSheets-${VERSION}-ARM64.zip.sha256 >> checksums.txt
+          
+          # Generate checksums in parallel
+          {
+            sha256sum CheatSheets-${VERSION}-x64.zip | tr 'a-f' 'A-F' > CheatSheets-${VERSION}-x64.zip.sha256 &
+            sha256sum CheatSheets-${VERSION}-ARM64.zip | tr 'a-f' 'A-F' > CheatSheets-${VERSION}-ARM64.zip.sha256 &
+            wait
+          }
+          
+          # Create combined checksums file efficiently
+          {
+            echo "SHA256 Checksums for CheatSheets Plugin v${VERSION}"
+            echo "Generated on: $(date -u)"
+            echo ""
+            cat CheatSheets-${VERSION}-x64.zip.sha256
+            cat CheatSheets-${VERSION}-ARM64.zip.sha256
+          } > checksums.txt
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

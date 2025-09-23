@@ -617,13 +617,28 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
 
         private Result CreateResultFromCheatSheet(CheatSheetItem sheet, string searchTerm)
         {
+            // Extract category from SourceName if it exists
+            string category = "";
+            if (sheet.SourceName != null && sheet.SourceName.Contains(" "))
+            {
+                var parts = sheet.SourceName.Split(' ', 2);
+                if (parts.Length > 1)
+                {
+                    category = parts[1];
+                }
+            }
+            
             return new Result
             {
                 QueryTextDisplay = searchTerm,
                 IcoPath = IconPath,
                 Title = sheet.Title,
-                SubTitle = string.IsNullOrWhiteSpace(sheet.Description) ? sheet.SourceName : sheet.Description,
-                ToolTipData = new ToolTipData(sheet.Title, $"{sheet.SourceName}\n{sheet.Command}"),
+                SubTitle = string.IsNullOrWhiteSpace(sheet.Description) 
+                    ? sheet.SourceName 
+                    : $"{sheet.Description} [{category}]", // Add category to description
+                ToolTipData = new ToolTipData(
+                    $"{sheet.Title} ({category})", 
+                    $"{sheet.SourceName}\n{sheet.Command}\n\nCategory: {category}"),
                 Score = sheet.Score,
                 Action = _ =>
                 {
@@ -637,6 +652,21 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
 
         private static string GetSourceIcon(string sourceName)
         {
+            if (string.IsNullOrWhiteSpace(sourceName))
+                return "[Command]";
+                
+            // Handle case where sourceName already contains category (e.g., "📴 VIM")
+            if (sourceName.Contains(" "))
+            {
+                var parts = sourceName.Split(' ', 2);
+                if (parts.Length > 1)
+                {
+                    // Keep the emoji but format the category nicely
+                    return $"{parts[0]} [{parts[1]}]";
+                }
+            }
+            
+            // Handle standard sources
             return sourceName.ToLowerInvariant() switch
             {
                 "devhints" => "[DevHints]",
@@ -645,7 +675,7 @@ namespace Community.PowerToys.Run.Plugin.CheatSheets
                 "offline" => "[Offline]",
                 "personal" => "[Personal]",
                 "history" => "[History]",
-                _ => "[Command]"
+                _ => $"[{sourceName}]"
             };
         }
     }

@@ -314,23 +314,44 @@ public static class OfflineCheatSheets
 
         var results = new List<CheatSheetItem>();
         var term = searchTerm.ToLowerInvariant().Trim();
+        
+        // Check if the search term contains a category prefix
+        string categoryPrefix = null;
+        string commandTerm = term;
+        
+        foreach (var category in OfflineSheets.Keys)
+        {
+            if (term.StartsWith(category + " "))
+            {
+                categoryPrefix = category;
+                commandTerm = term.Substring(category.Length).Trim();
+                break;
+            }
+        }
 
         foreach (var category in OfflineSheets)
         {
+            // If a category prefix was found, only search in that category
+            if (categoryPrefix != null && category.Key != categoryPrefix)
+                continue;
+                
+            var searchInCategory = categoryPrefix != null ? commandTerm : term;
+            
             var categoryResults = category.Value
                 .Where(item =>
-                    item.Command.ToLowerInvariant().Contains(term) ||
-                    item.Description.ToLowerInvariant().Contains(term) ||
-                    category.Key.Contains(term) ||
-                    FuzzyMatcher.IsFuzzyMatch(term, item.Command, 40))
+                    item.Command.ToLowerInvariant().Contains(searchInCategory) ||
+                    item.Description.ToLowerInvariant().Contains(searchInCategory) ||
+                    (categoryPrefix == null && category.Key.Contains(term)) ||
+                    FuzzyMatcher.IsFuzzyMatch(searchInCategory, item.Command, 40))
                 .Select(item => new CheatSheetItem
                 {
                     Title = item.Command,
                     Description = item.Description,
                     Command = item.Command,
                     Url = $"offline://{category.Key}",
-                    SourceName = "Offline",
-                    Score = CalculateOfflineScore(term, item.Command, item.Description)
+                    SourceName = $"📴 {category.Key.ToUpperInvariant()}", // Include category in source name
+                    Score = CalculateOfflineScore(searchInCategory, item.Command, item.Description) + 
+                           (categoryPrefix != null ? 20 : 0) // Boost score for category-specific searches
                 })
                 .ToList();
 
@@ -348,14 +369,15 @@ public static class OfflineCheatSheets
         if (!OfflineSheets.ContainsKey(category.ToLowerInvariant()))
             return new List<CheatSheetItem>();
 
-        return OfflineSheets[category.ToLowerInvariant()]
+        var categoryKey = category.ToLowerInvariant();
+        return OfflineSheets[categoryKey]
             .Select(item => new CheatSheetItem
             {
                 Title = item.Command,
                 Description = item.Description,
                 Command = item.Command,
-                Url = $"offline://{category}",
-                SourceName = "📴 Offline",
+                Url = $"offline://{categoryKey}",
+                SourceName = $"📴 {categoryKey.ToUpperInvariant()}", // Make category visible in uppercase
                 Score = 70
             })
             .ToList();

@@ -1,7 +1,0 @@
-run = "dotnet run"
-
-[deployment]
-run = ["sh", "-c", "dotnet run"]
-
-[nix]
-channel = "stable-24_05"

@@ -48,6 +48,17 @@
   </a>
 </div>
 
+## 📊 Download Statistics
+
+<div align="center">
+  <img src="https://img.shields.io/github/downloads/ruslanlap/PowerToysRun-CheatSheets/total?style=for-the-badge&label=Total%20Downloads" height="42" alt="Total Downloads">
+  <img src="https://img.shields.io/github/downloads/ruslanlap/PowerToysRun-CheatSheets/latest/total?style=for-the-badge&label=Latest%20Release" height="42"  alt="Latest Release Downloads">
+</div>
+  <div align="center">
+    <img src="assets/demo3.png" alt="Demo: Settings" width="800">
+    <p><em>CheatSheets Plugin Settings Demo</em></p>
+  </div>
+
 ## 📋 Quick Links
 
 - [Download latest release](https://github.com/ruslanlap/PowerToysRun-CheatSheets/releases/latest)
@@ -80,16 +91,7 @@
 - [License](#-license)
 - [Acknowledgements](#-acknowledgements)
 
-## 📊 Download Statistics
 
-<div align="center">
-  <img src="https://img.shields.io/github/downloads/ruslanlap/PowerToysRun-CheatSheets/total?style=for-the-badge&label=Total%20Downloads" height="42" alt="Total Downloads">
-  <img src="https://img.shields.io/github/downloads/ruslanlap/PowerToysRun-CheatSheets/latest/total?style=for-the-badge&label=Latest%20Release" height="42"  alt="Latest Release Downloads">
-</div>
-  <div align="center">
-    <img src="assets/demo3.png" alt="Demo: Settings" width="800">
-    <p><em>CheatSheets Plugin Settings Demo</em></p>
-  </div>
 
 ## 📝 Overview
 

@@ -48,6 +48,38 @@
   </a>
 </div>
 
+## 📋 Quick Links
+
+- [Download latest release](https://github.com/ruslanlap/PowerToysRun-CheatSheets/releases/latest)
+- [Installation guide](#-installation)
+- [Usage tips](#-usage)
+- [Release notes](#-whats-new-in-v100)
+- [Report an issue](https://github.com/ruslanlap/PowerToysRun-CheatSheets/issues)
+
+## 🧭 Table of Contents
+
+- [Overview](#-overview)
+- [Features](#-features)
+- [Demo](#-demo)
+- [Quick Start](#-quick-start)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Configuration Tips](#-configuration-tips)
+- [Updating](#-updating)
+- [What's New in v1.0.0](#-whats-new-in-v100)
+- [Building from Source](#-building-from-source)
+- [Development & Quality](#-development--quality)
+- [Project Structure](#-project-structure)
+- [FAQ](#-faq)
+- [Troubleshooting](#-troubleshooting)
+- [Security & Privacy](#-security--privacy)
+- [Tech Stack](#-tech-stack)
+- [Contributing](#-contributing)
+- [Screenshots](#-screenshots)
+- [Support the Project](#-support-the-project)
+- [License](#-license)
+- [Acknowledgements](#-acknowledgements)
+
 ## 📊 Download Statistics
 
 <div align="center">
@@ -61,7 +93,7 @@
 
 ## 📝 Overview
 
-**CheatSheets** is a PowerToys Run plugin that lets you instantly find cheat sheets and command examples for various tools and programming languages. Search through [tldr pages](https://tldr.sh/), [cheat.sh](https://cheat.sh/), and [devhints.io](https://devhints.io/), offline documentation—no browser required! All powers of this cheatsheets in one place just click Alt+Space and type `cs` or `cheatsheet`.
+**CheatSheets** keeps command references at your fingertips directly inside PowerToys Run. Search across [tldr pages](https://tldr.sh/), [cheat.sh](https://cheat.sh/), [devhints.io](https://devhints.io/), and offline documentation with fuzzy matching, smart caching, and zero browser context switching. Launch PowerToys Run with `Alt+Space`, type `cs` (or your custom keyword), and jump straight to the command you need.
 
 - **Plugin ID:** `41BF0604C51A4974A0BAA108826D0A94`
 - **Action Keyword:** `cs` or change to `cheatsheet`
@@ -86,6 +118,12 @@
   <p><em>CheatSheets Plugin Demo GIF</em></p>
 </div>
 
+## 🚀 Quick Start
+
+1. Download the latest `CheatSheets-<version>-<arch>.zip` from the [releases](https://github.com/ruslanlap/PowerToysRun-CheatSheets/releases/latest) page.
+2. Extract the archive into `%LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\CheatSheets` (create the folder if it does not exist).
+3. Restart PowerToys, open PowerToys Run with `Alt+Space`, and type `cs docker` (or any query) to verify search results appear.
+
 ## ⚡ Installation
 
 ### Prerequisites
@@ -93,23 +131,21 @@
 - PowerToys installed and running
 
 ### Steps
-1. Download the appropriate ZIP file for your platform:
-   - [x64 version](https://github.com/ruslanlap/PowerToysRun-CheatSheets/releases/download/v1.0.0/CheatSheets-1.0.0-x64.zip)
-   - [ARM64 version](https://github.com/ruslanlap/PowerToysRun-CheatSheets/releases/download/v1.0.0/CheatSheets-1.0.0-ARM64.zip)
-
-2. Extract the ZIP file to your PowerToys plugins directory:
+1. Download the ZIP that matches your CPU architecture:
+   - [CheatSheets-1.0.0-x64.zip](https://github.com/ruslanlap/PowerToysRun-CheatSheets/releases/download/v1.0.0/CheatSheets-1.0.0-x64.zip)
+   - [CheatSheets-1.0.0-ARM64.zip](https://github.com/ruslanlap/PowerToysRun-CheatSheets/releases/download/v1.0.0/CheatSheets-1.0.0-ARM64.zip)
+2. Extract the ZIP contents into:
    ```
-   %LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\
+   %LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\CheatSheets
    ```
-   
+   Ensure the folder contains files such as `Community.PowerToys.Run.Plugin.CheatSheets.dll` and `plugin.json`.
 3. Restart PowerToys completely:
-   - Right-click PowerToys in system tray → Exit
-   - Start PowerToys again
-
-4. Test the plugin:
-   - Press `Alt+Space` to open PowerToys Run
-   - Type `cs` and hit Enter
-   - Try searching for commands like "git", "docker", or "python"
+   - Right-click PowerToys in the system tray → **Exit**
+   - Launch PowerToys again from the Start menu
+4. Confirm installation:
+   - Open PowerToys Run with `Alt+Space`
+   - Type `cs docker` or any term to see cheat sheet results
+   - Use the context menu to add a result to favorites as an extra sanity check
 
 ## 🚀 Usage     
 - Open PowerToys Run (`Alt+Space`)
@@ -124,6 +160,20 @@
 - Right-click results for context menu options (favorites, etc.)
 - Configure settings in PowerToys settings
 
+## ⚙️ Configuration Tips
+
+- Adjust the **Action Keyword** (`cs` by default) in PowerToys → `PowerToys Run` → `Plugins` → `CheatSheets` to suit your workflow.
+- Tweak cache duration, preferred data sources, and offline sync from the plugin settings page for faster, offline-first lookups.
+- Manage favorites and history directly within the plugin settings if you want to clear or export your curated list.
+
+## 🔄 Updating
+
+1. Download the newest release ZIP for your architecture.
+2. Close PowerToys.
+3. Delete the old `%LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\CheatSheets` folder to avoid stale files.
+4. Extract the updated ZIP to the same location and restart PowerToys.
+5. Verify the plugin version in PowerToys settings matches the release notes.
+
 ## 📢 What's New in v1.0.0
 
 - **🔍 Fuzzy Search** - Improved search with fuzzy matching for better results
@@ -135,10 +185,34 @@
 - **🎨 Modern UI** - Enhanced interface with theme adaptation
 
 ## 🛠️ Building from Source
-- Requires .NET 6+ SDK and Windows 10/11
-- Clone the repo and open `Templates.sln` in Visual Studio
-- Build the `CheatSheets` project (x64 or ARM64)
-- Output: `CheatSheets-x64.zip` or `CheatSheets-ARM64.zip` in the root directory
+
+### Prerequisites
+- .NET 9.0 SDK and Windows 10/11
+- Visual Studio 2022 (or newer) with `.NET desktop development` workload
+- PowerToys installed locally for manual testing
+
+### Visual Studio workflow
+1. Clone the repository and open `Templates.sln`.
+2. Set the startup project to `Community.PowerToys.Run.Plugin.CheatSheets`.
+3. Choose the desired architecture (**x64** or **ARM64**) and build in **Release** mode.
+4. Published binaries are placed under `CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets/bin/<ARCH>/Release/net9.0-windows10.0.22621.0/<runtime>/publish`.
+
+### Command-line workflow
+
+Use the helper script for reproducible builds and packaging:
+
+```
+./build-and-zip.sh
+```
+
+Resulting ZIPs (`CheatSheets-<version>-x64.zip`, `CheatSheets-<version>-arm64.zip`) are created in the repository root.
+
+## 🧪 Development & Quality
+
+- Run unit tests with `dotnet test CheatSheets/Community.PowerToys.Run.Plugin.CheatSheets.UnitTests/` before submitting changes.
+- Execute `./build-and-zip.sh` to verify multi-architecture packages and SQLite dependencies.
+- Use `./ptrun-lint.sh` to catch common packaging issues flagged by `ptrun-lint` before publishing.
+- Keep screenshots and GIFs in `assets/` up to date so documentation reflects the current UI.
 
 ## 📊 Project Structure
 ```
@@ -185,13 +259,15 @@ PowerToysRun-CheatSheets/
 ## 🛠️ Troubleshooting
 
 - **Plugin does not appear in PowerToys Run**  
-  Make sure you extracted the plugin to the correct folder and restarted PowerToys.
+  Confirm the folder path matches `%LOCALAPPDATA%\Microsoft\PowerToys\PowerToys Run\Plugins\CheatSheets` and that `plugin.json` exists inside.
 - **Search results not showing**  
-  Check your internet connection for initial setup, or ensure cache is populated.
-- **Icons do not update**  
-  Try deleting the old plugin folder before copying the new version.
+  Check internet access for first-time sync, then use the settings page to refresh cache if needed.
+- **Icons or assets look outdated**  
+  Remove the old plugin folder before copying the new version to avoid stale images.
 - **Favorites not saving**  
-  Ensure PowerToys has write permissions to its settings directory.
+  Ensure PowerToys runs with enough permissions to write to its settings directory (no read-only drives or roaming profile restrictions).
+- **Unexpected errors in logs**  
+  Capture `PowerToys Run` logs, open an [issue](https://github.com/ruslanlap/PowerToysRun-CheatSheets/issues), and include reproduction steps plus the output of `./build-and-zip.sh` if relevant.
 
 ## 🔒 Security & Privacy
 
@@ -222,7 +298,7 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
   <img src="assets/demo2.png" width="800" height="400" alt="Demo: Search Results">
 </div>
 
-## ☕ Support
+## ☕ Support the Project
 Enjoying CheatSheets? ☕ Buy me a coffee to support development:
 
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-☕️-FFDD00?style=for-the-badge&logo=buy-me-a-coffee)](https://ruslanlap.github.io/ruslanlap_buymeacoffe/)
@@ -235,7 +311,6 @@ MIT License. See [LICENSE](LICENSE).
 - [tldr](https://tldr.sh/) project
 - [cheat.sh](https://cheat.sh/) service
 - [devhints.io](https://devhints.io/)
-- All contributors and users!
 
 <div align="center">
   <img src="assets/demo4.png" width="800" height="400" alt="Demo">

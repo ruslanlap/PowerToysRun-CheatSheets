@@ -251,7 +251,7 @@ cd PowerToysRun-CheatSheets
 - **CI/CD Ready**: GitHub Actions automation
 - **Plugin Template**: Great starting point for other PowerToys plugins
 
-<div align="center">
+<div align="left">
 
 **Want to contribute?** 
 
@@ -264,7 +264,7 @@ cd PowerToysRun-CheatSheets
 
 ## 🌟 Community & Support
 
-<div align="center">
+<div align="left">
 
 ### Show Some Love ❤️
 

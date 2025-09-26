@@ -117,7 +117,7 @@ Alt+Space → cs:fav           # ⭐ Your favorites
 <sub>Background caching ensures<br>instant results</sub>
 </td>
 <td align="center" width="33%">
-<img width="60" src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Globe showing Americas/3D/globe_showing_americas_3d.png">
+<img width="60" src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Globe%20showing%20americas/3D/globe_showing_americas_3d.png">
 <br><b>🌐 Works Offline</b><br>
 <sub>Full functionality without<br>internet connection</sub>
 </td>
